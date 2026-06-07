@@ -6,6 +6,8 @@ import (
 
 	"memoria/internal/middleware"
 	"memoria/internal/service"
+
+	"github.com/google/uuid"
 )
 
 type SessionHandler struct {
@@ -13,7 +15,7 @@ type SessionHandler struct {
 }
 
 func (h *SessionHandler) Create(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value(middleware.UserIDKey).(string)
+	userID := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
 
 	var req struct {
 		Title string `json:"title"`

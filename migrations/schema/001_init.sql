@@ -1,3 +1,4 @@
+-- +goose Up
 create table users (
   id uuid primary key,
   api_key text unique not null,
@@ -21,3 +22,8 @@ create table memories (
 
 create index idx_memories_user on memories(user_id);
 create index idx_memories_session on memories(session_id);
+
+-- +goose Down
+drop table if exists memories;
+drop table if exists sessions;
+drop table if exists users;

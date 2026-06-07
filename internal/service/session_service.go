@@ -11,7 +11,7 @@ type SessionService struct {
 	Repo *repository.SessionRepo
 }
 
-func (s *SessionService) Create(userID, title string) error {
+func (s *SessionService) Create(userID uuid.UUID, title string) error {
 	return s.Repo.Create(model.Session{
 		ID:     uuid.New().String(),
 		UserID: userID,

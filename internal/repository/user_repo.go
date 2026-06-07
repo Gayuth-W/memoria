@@ -20,3 +20,12 @@ func (r *UserRepo) GetByAPIKey(key string) (*model.User, error) {
 
 	return u, err
 }
+
+func (r *UserRepo) Create(s model.User) error {
+	_, err := r.DB.Exec(`
+		insert into users(id, api_key, created_at)
+		values ($1, $2, $3)
+	`, s.ID, s.APIKey, s.CreatedAt)
+
+	return err
+}
