@@ -8,15 +8,16 @@ ALTER TABLE memories ADD COLUMN IF NOT EXISTS tsv tsvector;
 CREATE INDEX IF NOT EXISTS idx_memories_fts ON memories USING GIN(tsv);
 
 -- Step 3: Create trigger function
+-- +goose StatementBegin
 CREATE OR REPLACE FUNCTION memories_tsv_trigger() RETURNS trigger AS $$
 BEGIN
     new.tsv := to_tsvector('english', coalesce(new.text, ''));
     RETURN new;
 END
 $$ LANGUAGE plpgsql;
+-- +goose StatementEnd
 
 -- Step 4: Create trigger
-DROP TRIGGER IF EXISTS tsv_update ON memories;
 CREATE TRIGGER tsv_update
     BEFORE INSERT OR UPDATE ON memories
     FOR EACH ROW 
