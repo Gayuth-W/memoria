@@ -10,10 +10,14 @@ import (
 	"github.com/joho/godotenv"
 
 	"memoria/internal/db"
+	"memoria/internal/embedding"
 	"memoria/internal/handler"
 	"memoria/internal/middleware"
+	vector "memoria/internal/qdrant"
 	"memoria/internal/repository"
+	"memoria/internal/search"
 	"memoria/internal/service"
+	"memoria/internal/worker"
 )
 
 func main() {
@@ -27,14 +31,38 @@ func main() {
 
 	database := db.NewDB()
 
+	// embeddings
+	embedder := embedding.NewOllamaEmbedder()
+
+	// qdrant
+	vectorStore := vector.NewVectorStore()
+
+	if err := vectorStore.Init(); err != nil {
+		log.Fatal(err)
+	}
+
+	// worker
+	workerHandler := &worker.Handler{
+		Embedder: embedder,
+		Vector:   vectorStore,
+	}
+
+	backgroundWorker := worker.NewWorker(
+		100,
+		workerHandler.Handle,
+	)
+
+	// repositories
 	userRepo := &repository.UserRepo{DB: database}
 	sessionRepo := &repository.SessionRepo{DB: database}
 	memoryRepo := &repository.MemoryRepo{DB: database}
 
+	// services
 	sessionService := &service.SessionService{Repo: sessionRepo}
-	memoryService := &service.MemoryService{Repo: memoryRepo}
+	memoryService := &service.MemoryService{Repo: memoryRepo, Worker: backgroundWorker}
 	userService := &service.UserService{Repo: userRepo}
 
+	// handlers
 	sessionHandler := &handler.SessionHandler{Service: sessionService}
 	memoryHandler := &handler.MemoryHandler{Service: memoryService}
 	userHandler := &handler.UserHandler{Service: userService}
@@ -51,12 +79,16 @@ func main() {
 
 	// 1. Public Routes (No authentication needed)
 	r.Post("/users", userHandler.Create)
+
 	// 2. Protected Routes (Authenticated using API Key)
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.APIKeyAuth(userRepo))
 		r.Post("/sessions", sessionHandler.Create)
 		r.Post("/memories", memoryHandler.Create)
 	})
+
+	searchser := &search.Service{Embedder: embedder, Vector: vectorStore, Repo: memoryRepo}
+	searchser.Search("7a6dbabb-6560-4d0c-90b6-ae54eea5a9ac", "testing")
 
 	log.Println("Server running on : ", portString)
 	http.ListenAndServe(":"+portString, r)
