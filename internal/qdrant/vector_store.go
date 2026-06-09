@@ -13,14 +13,26 @@ type VectorStore struct {
 func NewVectorStore() *VectorStore {
 	client, _ := qdrant.NewClient(&qdrant.Config{
 		Host: "localhost",
-		Port: 6333,
+		Port: 6334,
 	})
 
 	return &VectorStore{client: client}
 }
 
 func (v *VectorStore) Init() error {
-	return v.client.CreateCollection(context.Background(), &qdrant.CreateCollection{
+	ctx := context.Background()
+	exists, err := v.client.CollectionExists(ctx, "memories")
+	if err != nil {
+		return err
+	}
+
+	// If it exists, skip creation entirely to prevent crashing
+	if exists {
+		return nil
+	}
+
+	//Create the collection safely if it's missing
+	return v.client.CreateCollection(ctx, &qdrant.CreateCollection{
 		CollectionName: "memories",
 		VectorsConfig: qdrant.NewVectorsConfig(&qdrant.VectorParams{
 			Size:     768, // IMPORTANT: match your Ollama model output
@@ -43,7 +55,7 @@ func (v *VectorStore) Upsert(id string, vector []float32, payload map[string]any
 						Vector: &qdrant.Vector{Data: vector},
 					},
 				},
-				Payload: payload,
+				Payload: toQdrantPayload(payload),
 			},
 		},
 	})
@@ -53,11 +65,11 @@ func (v *VectorStore) Upsert(id string, vector []float32, payload map[string]any
 
 func (v *VectorStore) Search(vector []float32, limit uint64) ([]string, error) {
 
-	res, err := v.client.Search(context.Background(), &qdrant.SearchPoints{
+	res, err := v.client.Query(context.Background(), &qdrant.QueryPoints{
 		CollectionName: "memories",
-		Vector:         vector,
-		Limit:          limit,
-		WithPayload:    true,
+		Query:          qdrant.NewQuery(vector...),
+		Limit:          &limit,
+		WithPayload:    qdrant.NewWithPayload(true),
 	})
 	if err != nil {
 		return nil, err
@@ -69,4 +81,27 @@ func (v *VectorStore) Search(vector []float32, limit uint64) ([]string, error) {
 	}
 
 	return ids, nil
+}
+
+func toQdrantPayload(m map[string]any) map[string]*qdrant.Value {
+	out := make(map[string]*qdrant.Value)
+
+	for k, v := range m {
+		switch val := v.(type) {
+		case string:
+			out[k] = &qdrant.Value{
+				Kind: &qdrant.Value_StringValue{StringValue: val},
+			}
+		case int:
+			out[k] = &qdrant.Value{
+				Kind: &qdrant.Value_IntegerValue{IntegerValue: int64(val)},
+			}
+		case int64:
+			out[k] = &qdrant.Value{
+				Kind: &qdrant.Value_IntegerValue{IntegerValue: val},
+			}
+		}
+	}
+
+	return out
 }
