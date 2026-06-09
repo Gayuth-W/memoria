@@ -39,3 +39,26 @@ func (r *MemoryRepo) ListByUser(userID string) ([]model.Memory, error) {
 
 	return res, nil
 }
+
+func (r *MemoryRepo) KeywordSearch(userID, query string) ([]string, error) {
+	rows, err := r.DB.Query(`
+		SELECT id
+		FROM memories
+		WHERE user_id = $1 AND text ILIKE $2
+	`, userID, "%"+query+"%")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+
+	return ids, nil
+}
