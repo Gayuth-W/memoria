@@ -6,6 +6,8 @@ import (
 
 	"memoria/internal/middleware"
 	"memoria/internal/service"
+
+	"github.com/google/uuid"
 )
 
 type MemoryHandler struct {
@@ -13,7 +15,7 @@ type MemoryHandler struct {
 }
 
 func (h *MemoryHandler) Create(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value(middleware.UserIDKey).(string)
+	userID := r.Context().Value(middleware.UserIDKey).(uuid.UUID).String()
 
 	var req struct {
 		SessionID string `json:"session_id"`
