@@ -14,7 +14,7 @@ type OllamaEmbedder struct {
 func NewOllamaEmbedder() *OllamaEmbedder {
 	return &OllamaEmbedder{
 		BaseURL: "http://localhost:11434",
-		Model:   "nomic-embed-text", // or whatever you installed
+		Model:   "nomic-embed-text-v2-moe:latest",
 	}
 }
 
