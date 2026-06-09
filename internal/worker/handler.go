@@ -2,7 +2,7 @@ package worker
 
 import (
 	"memoria/internal/embedding"
-	"memoria/internal/vector"
+	vector "memoria/internal/qdrant"
 )
 
 type Handler struct {

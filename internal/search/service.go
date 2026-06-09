@@ -2,8 +2,8 @@ package search
 
 import (
 	"memoria/internal/embedding"
+	vector "memoria/internal/qdrant"
 	"memoria/internal/repository"
-	"memoria/internal/vector"
 )
 
 type Service struct {
@@ -22,6 +22,8 @@ func (s *Service) Search(userID, query string) ([]string, error) {
 	seen := map[string]bool{}
 	var result []string
 
+	println("keywordIDs:", keywordIDs)
+	println("vectorIDs:", vectorIDs)
 	for _, id := range append(keywordIDs, vectorIDs...) {
 		if !seen[id] {
 			seen[id] = true

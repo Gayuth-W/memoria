@@ -3,6 +3,7 @@ package service
 import (
 	"memoria/internal/model"
 	"memoria/internal/repository"
+	"memoria/internal/worker"
 
 	"github.com/google/uuid"
 )
