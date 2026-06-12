@@ -3,6 +3,8 @@ package repository
 import (
 	"database/sql"
 	"memoria/internal/model"
+
+	"github.com/lib/pq"
 )
 
 type MemoryRepo struct {
@@ -61,4 +63,52 @@ func (r *MemoryRepo) KeywordSearch(userID, query string) ([]string, error) {
 	}
 
 	return ids, nil
+}
+
+func (r *MemoryRepo) GetByIDs(
+	ids []string,
+) ([]model.Memory, error) {
+
+	if len(ids) == 0 {
+		return []model.Memory{}, nil
+	}
+
+	query := `
+        SELECT
+            id,
+            user_id,
+            session_id,
+            text,
+            created_at,
+            importance_score
+        FROM memories
+        WHERE id = ANY($1)
+    `
+
+	rows, err := r.DB.Query(query, pq.Array(ids))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var memories []model.Memory
+
+	for rows.Next() {
+		var m model.Memory
+
+		err := rows.Scan(
+			&m.ID,
+			&m.UserID,
+			&m.SessionID,
+			&m.Text,
+			&m.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		memories = append(memories, m)
+	}
+
+	return memories, nil
 }
