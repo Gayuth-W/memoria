@@ -18,13 +18,14 @@ func (h *MemoryHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middleware.UserIDKey).(uuid.UUID).String()
 
 	var req struct {
-		SessionID string `json:"session_id"`
-		Text      string `json:"text"`
+		SessionID     string `json:"session_id"`
+		Text          string `json:"text"`
+		EmbeddingHash string `json:"embedding_hash"`
 	}
 
 	json.NewDecoder(r.Body).Decode(&req)
 
-	err := h.Service.Create(userID, req.SessionID, req.Text)
+	err := h.Service.Create(userID, req.SessionID, req.Text, req.EmbeddingHash)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
