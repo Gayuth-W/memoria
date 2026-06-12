@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -87,8 +89,35 @@ func main() {
 		r.Post("/memories", memoryHandler.Create)
 	})
 
-	searchser := &search.Service{Embedder: embedder, Vector: vectorStore, Repo: memoryRepo}
-	searchser.Search("7a6dbabb-6560-4d0c-90b6-ae54eea5a9ac", "testing")
+	redisCache := cache.NewRedisCache()
+
+	cacheKey := "testing"
+
+	cached, err := redisCache.Get(cacheKey)
+
+	if err == nil {
+
+		var results []ranking.SearchResult
+
+		json.Unmarshal(
+			[]byte(cached),
+			&results,
+		)
+
+		bytes, _ := json.Marshal(results)
+
+		redisCache.Set(cacheKey, string(bytes))
+		fmt.Println(results)
+
+		return results, nil
+	}
+
+	searchService := &search.Service{
+		Embedder: embedder,
+		Vector:   vectorStore,
+		Repo:     memoryRepo,
+		Cache:    redisCache,
+	}
 
 	log.Println("Server running on : ", portString)
 	http.ListenAndServe(":"+portString, r)
