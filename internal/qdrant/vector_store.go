@@ -63,7 +63,7 @@ func (v *VectorStore) Upsert(id string, vector []float32, payload map[string]any
 	return err
 }
 
-func (v *VectorStore) Search(vector []float32, limit uint64) ([]string, error) {
+func (v *VectorStore) Search(vector []float32, limit uint64) ([]VectorResult, error) {
 
 	res, err := v.client.Query(context.Background(), &qdrant.QueryPoints{
 		CollectionName: "memories",
@@ -75,9 +75,12 @@ func (v *VectorStore) Search(vector []float32, limit uint64) ([]string, error) {
 		return nil, err
 	}
 
-	var ids []string
+	var ids []VectorResult
 	for _, r := range res {
-		ids = append(ids, r.Id.GetUuid())
+		ids = append(ids, VectorResult{
+			MemoryID: r.Id.GetUuid(),
+			Score:    float64(r.Score),
+		})
 	}
 
 	return ids, nil

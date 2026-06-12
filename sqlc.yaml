@@ -6,3 +6,7 @@ sql:
     gen:
       go:
         out: "internal/database"
+redis:
+  image: redis:7
+  ports:
+    - "6379:6379"

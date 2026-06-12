@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -9,13 +11,14 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 
+	"memoria/internal/cache"
 	"memoria/internal/db"
 	"memoria/internal/embedding"
 	"memoria/internal/handler"
 	"memoria/internal/middleware"
 	vector "memoria/internal/qdrant"
+	"memoria/internal/ranking"
 	"memoria/internal/repository"
-	"memoria/internal/search"
 	"memoria/internal/service"
 	"memoria/internal/worker"
 )
@@ -87,8 +90,34 @@ func main() {
 		r.Post("/memories", memoryHandler.Create)
 	})
 
-	searchser := &search.Service{Embedder: embedder, Vector: vectorStore, Repo: memoryRepo}
-	searchser.Search("7a6dbabb-6560-4d0c-90b6-ae54eea5a9ac", "testing")
+	redisCache := cache.NewRedisCache()
+
+	cacheKey := "testing"
+
+	cached, err := redisCache.Get(cacheKey)
+
+	if err == nil {
+
+		var results []ranking.SearchResult
+
+		json.Unmarshal(
+			[]byte(cached),
+			&results,
+		)
+
+		bytes, _ := json.Marshal(results)
+
+		redisCache.Set(cacheKey, string(bytes))
+		fmt.Println(results)
+
+	}
+
+	// searchService := &search.Service{
+	// 	Embedder: embedder,
+	// 	Vector:   vectorStore,
+	// 	Repo:     memoryRepo,
+	// 	Cache:    redisCache,
+	// }
 
 	log.Println("Server running on : ", portString)
 	http.ListenAndServe(":"+portString, r)
