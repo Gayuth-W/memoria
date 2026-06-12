@@ -11,13 +11,14 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
 
+	"memoria/internal/cache"
 	"memoria/internal/db"
 	"memoria/internal/embedding"
 	"memoria/internal/handler"
 	"memoria/internal/middleware"
 	vector "memoria/internal/qdrant"
+	"memoria/internal/ranking"
 	"memoria/internal/repository"
-	"memoria/internal/search"
 	"memoria/internal/service"
 	"memoria/internal/worker"
 )
@@ -109,15 +110,14 @@ func main() {
 		redisCache.Set(cacheKey, string(bytes))
 		fmt.Println(results)
 
-		return results, nil
 	}
 
-	searchService := &search.Service{
-		Embedder: embedder,
-		Vector:   vectorStore,
-		Repo:     memoryRepo,
-		Cache:    redisCache,
-	}
+	// searchService := &search.Service{
+	// 	Embedder: embedder,
+	// 	Vector:   vectorStore,
+	// 	Repo:     memoryRepo,
+	// 	Cache:    redisCache,
+	// }
 
 	log.Println("Server running on : ", portString)
 	http.ListenAndServe(":"+portString, r)
