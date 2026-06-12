@@ -13,9 +13,21 @@ type MemoryRepo struct {
 
 func (r *MemoryRepo) Create(m model.Memory) error {
 	_, err := r.DB.Exec(`
-		INSERT INTO memories (id, user_id, session_id, text)
-		VALUES ($1, $2, $3, $4)
-	`, m.ID, m.UserID, m.SessionID, m.Text)
+		INSERT INTO memories (
+			id,
+			user_id,
+			session_id,
+			text,
+			embedding_hash
+		)
+		VALUES ($1,$2,$3,$4,$5)
+	`,
+		m.ID,
+		m.UserID,
+		m.SessionID,
+		m.Text,
+		m.EmbeddingHash,
+	)
 
 	return err
 }

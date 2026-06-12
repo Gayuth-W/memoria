@@ -13,13 +13,14 @@ type MemoryService struct {
 	Worker *worker.Worker
 }
 
-func (s *MemoryService) Create(userID, sessionID, text string) error {
+func (s *MemoryService) Create(userID, sessionID, text, embeddingHash string) error {
 
 	m := model.Memory{
-		ID:        uuid.New().String(),
-		UserID:    userID,
-		SessionID: sessionID,
-		Text:      text,
+		ID:            uuid.New().String(),
+		UserID:        userID,
+		SessionID:     sessionID,
+		Text:          text,
+		EmbeddingHash: embeddingHash,
 	}
 
 	// 1. save to postgres

@@ -10,5 +10,5 @@ type Memory struct {
 	CreatedAt       time.Time `json:"created_at"`
 	TSV             string    `json:"tsv"`
 	ImportanceScore float64   `json:"importance_score"`
-	Embedding       []float32 `json:"embedding_hash"`
+	EmbeddingHash   string    `json:"embedding_hash"`
 }
