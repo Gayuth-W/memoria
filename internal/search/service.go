@@ -96,6 +96,6 @@ func (s *Service) Search(userID string, currentSession string, query string) ([]
 			},
 		)
 	}
-
-	return result, nil
+	ranked := ranking.Rank(results)
+	return ranked, nil
 }
