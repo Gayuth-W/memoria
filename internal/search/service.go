@@ -67,5 +67,35 @@ func (s *Service) Search(userID string, currentSession string, query string) ([]
 		return nil, err
 	}
 
+	var results []ranking.SearchResult
+
+	for _, memory := range memories {
+
+		results = append(
+			results,
+			ranking.SearchResult{
+
+				MemoryID:  memory.ID,
+				SessionID: memory.SessionID,
+				Text:      memory.Text,
+
+				Similarity: similarityMap[memory.ID],
+
+				Recency: ranking.RecencyScore(
+					memory.CreatedAt,
+				),
+
+				Importance: memory.ImportanceScore,
+
+				SessionBoost: ranking.SessionBoost(
+					currentSession,
+					memory.SessionID,
+				),
+
+				CreatedAt: memory.CreatedAt,
+			},
+		)
+	}
+
 	return result, nil
 }
