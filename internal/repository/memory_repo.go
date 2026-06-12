@@ -102,6 +102,7 @@ func (r *MemoryRepo) GetByIDs(
 			&m.SessionID,
 			&m.Text,
 			&m.CreatedAt,
+			&m.ImportanceScore,
 		)
 		if err != nil {
 			return nil, err
