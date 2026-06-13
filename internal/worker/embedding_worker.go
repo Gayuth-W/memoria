@@ -52,9 +52,10 @@ func NewWorker(cfg Config, handler func(Job) error) *Worker {
 	return w
 }
 
-func (w *Worker) loop() {
-	for job := range w.Queue {
-		_ = w.Handle(job)
+func (w *Worker) loop(id int) {
+	defer w.wg.Done()
+	for job := range w.queue {
+		w.process(id, job)
 	}
 }
 
