@@ -11,6 +11,7 @@ type Job struct {
 	UserID    string
 	SessionID string
 	Text      string
+	Attempts  int
 }
 
 type Worker struct {
@@ -56,6 +57,25 @@ func (w *Worker) loop(id int) {
 	defer w.wg.Done()
 	for job := range w.queue {
 		w.process(id, job)
+	}
+}
+
+func (w *Worker) process(workerID int, job Job) {
+	for {
+		start := time.Now()
+		err := w.handle(job)
+		if err == nil {
+			w.logger.Debug("job processed",
+				slog.Int("worker", workerID),
+				slog.String("memory_id", job.MemoryID),
+				slog.Int("attempts", job.Attempts+1),
+				slog.Duration("latency", time.Since(start)),
+			)
+			return
+		}
+
+		job.Attempts++
+
 	}
 }
 
