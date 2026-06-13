@@ -75,6 +75,15 @@ func (w *Worker) process(workerID int, job Job) {
 		}
 
 		job.Attempts++
+		if job.Attempts > w.maxRetries {
+			// dead letter: retries exhausted, drop with a loud log
+			w.logger.Error("job failed permanently",
+				slog.String("memory_id", job.MemoryID),
+				slog.Int("attempts", job.Attempts),
+				slog.String("error", err.Error()),
+			)
+			return
+		}
 
 		delay := w.baseDelay * (1 << (job.Attempts - 1)) // exponential backoff
 		w.logger.Warn("job failed, retrying",
