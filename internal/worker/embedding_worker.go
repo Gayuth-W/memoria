@@ -76,6 +76,14 @@ func (w *Worker) process(workerID int, job Job) {
 
 		job.Attempts++
 
+		delay := w.baseDelay * (1 << (job.Attempts - 1)) // exponential backoff
+		w.logger.Warn("job failed, retrying",
+			slog.String("memory_id", job.MemoryID),
+			slog.Int("attempt", job.Attempts),
+			slog.Duration("retry_in", delay),
+			slog.String("error", err.Error()),
+		)
+		time.Sleep(delay)
 	}
 }
 
