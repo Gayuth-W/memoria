@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"memoria/internal/config"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -12,16 +13,10 @@ type RedisCache struct {
 }
 
 func NewRedisCache() *RedisCache {
-
-	client := redis.NewClient(
-		&redis.Options{
-			Addr: "localhost:6379",
-		},
-	)
-
-	return &RedisCache{
-		Client: client,
-	}
+	client := redis.NewClient(&redis.Options{
+		Addr: config.Get("REDIS_ADDR", "localhost:6379"),
+	})
+	return &RedisCache{Client: client}
 }
 
 func (r *RedisCache) Get(

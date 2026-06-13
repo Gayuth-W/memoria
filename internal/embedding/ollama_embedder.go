@@ -3,6 +3,7 @@ package embedding
 import (
 	"bytes"
 	"encoding/json"
+	"memoria/internal/config"
 	"net/http"
 )
 
@@ -13,8 +14,8 @@ type OllamaEmbedder struct {
 
 func NewOllamaEmbedder() *OllamaEmbedder {
 	return &OllamaEmbedder{
-		BaseURL: "http://localhost:11434",
-		Model:   "nomic-embed-text-v2-moe:latest",
+		BaseURL: config.Get("OLLAMA_URL", "http://localhost:11434"),
+		Model:   config.Get("OLLAMA_MODEL", "nomic-embed-text-v2-moe:latest"),
 	}
 }
 

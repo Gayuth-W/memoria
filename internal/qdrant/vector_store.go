@@ -2,6 +2,7 @@ package vector
 
 import (
 	"context"
+	"memoria/internal/config"
 
 	"github.com/qdrant/go-client/qdrant"
 )
@@ -12,10 +13,9 @@ type VectorStore struct {
 
 func NewVectorStore() *VectorStore {
 	client, _ := qdrant.NewClient(&qdrant.Config{
-		Host: "localhost",
-		Port: 6334,
+		Host: config.Get("QDRANT_HOST", "localhost"),
+		Port: config.GetInt("QDRANT_PORT", 6334),
 	})
-
 	return &VectorStore{client: client}
 }
 
