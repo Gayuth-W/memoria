@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"context"
 	"log/slog"
 	"sync"
 	"time"
@@ -97,5 +98,18 @@ func (w *Worker) process(workerID int, job Job) {
 }
 
 func (w *Worker) Enqueue(job Job) {
-	w.Queue <- job
+	w.queue <- job
+}
+
+// Shutdown stops intake and waits for in-flight jobs (or ctx timeout).
+func (w *Worker) Shutdown(ctx context.Context) error {
+	close(w.queue)
+	done := make(chan struct{})
+	go func() { w.wg.Wait(); close(done) }()
+	select {
+	case <-done:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
