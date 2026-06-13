@@ -1,5 +1,11 @@
 package worker
 
+import (
+	"log/slog"
+	"sync"
+	"time"
+)
+
 type Job struct {
 	MemoryID  string
 	UserID    string
@@ -8,17 +14,41 @@ type Job struct {
 }
 
 type Worker struct {
-	Queue  chan Job
-	Handle func(Job) error
+	queue      chan Job
+	handle     func(Job) error
+	workers    int
+	maxRetries int
+	baseDelay  time.Duration
+	logger     *slog.Logger
+	wg         sync.WaitGroup
+}
+type Config struct {
+	Buffer     int
+	Workers    int
+	MaxRetries int
+	BaseDelay  time.Duration
+	Logger     *slog.Logger
 }
 
-func NewWorker(buffer int, handler func(Job) error) *Worker {
-	w := &Worker{
-		Queue:  make(chan Job, buffer),
-		Handle: handler,
+func NewWorker(cfg Config, handler func(Job) error) *Worker {
+	if cfg.Workers <= 0 {
+		cfg.Workers = 1
 	}
-
-	go w.loop()
+	if cfg.BaseDelay <= 0 {
+		cfg.BaseDelay = 200 * time.Millisecond
+	}
+	w := &Worker{
+		queue:      make(chan Job, cfg.Buffer),
+		handle:     handler,
+		workers:    cfg.Workers,
+		maxRetries: cfg.MaxRetries,
+		baseDelay:  cfg.BaseDelay,
+		logger:     cfg.Logger,
+	}
+	for i := 0; i < w.workers; i++ {
+		w.wg.Add(1)  //Adding new workder
+		go w.loop(i) //Running the added new worker
+	}
 	return w
 }
 
