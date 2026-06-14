@@ -124,3 +124,19 @@ func (s *Service) Search(userID string, currentSession string, query string) ([]
 	ranked := ranking.Rank(results)
 	return ranked, nil
 }
+
+func (s *Service) log(t *Trace) {
+	if s.Logger == nil {
+		return
+	}
+	s.Logger.Info("search",
+		slog.Bool("cache_hit", t.CacheHit),
+		slog.Int("keyword_results", t.KeywordResults),
+		slog.Int("vector_results", t.VectorResults),
+		slog.Int("final_results", t.FinalResults),
+		slog.Int64("embed_ms", t.EmbedMs),
+		slog.Int64("vector_ms", t.VectorMs),
+		slog.Int64("keyword_ms", t.KeywordMs),
+		slog.Int64("total_ms", t.TotalMs),
+	)
+}
