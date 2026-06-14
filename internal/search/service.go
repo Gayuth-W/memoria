@@ -103,62 +103,39 @@ func (s *Service) Search(userID string, currentSession string, query string) ([]
 		vectorIDs = append(vectorIDs, vr.MemoryID)
 	}
 
+	// merge + dedupe
 	seen := map[string]bool{}
-
 	var ids []string
-
-	for _, id := range append(
-		keywordIDs,
-		vectorIDs...,
-	) {
-
+	for _, id := range append(keywordIDs, vectorIDs...) {
 		if !seen[id] {
-
 			seen[id] = true
-
-			ids = append(
-				ids,
-				id,
-			)
+			ids = append(ids, id)
 		}
 	}
-	memories, err := s.Repo.GetByIDs(ids)
+	trace.MergedResults = len(ids)
 
+	memories, err := s.Repo.GetByIDs(ids)
 	if err != nil {
-		return nil, err
+		return nil, trace, err
 	}
 
 	var results []ranking.SearchResult
-
-	for _, memory := range memories {
-
-		results = append(
-			results,
-			ranking.SearchResult{
-
-				MemoryID:  memory.ID,
-				SessionID: memory.SessionID,
-				Text:      memory.Text,
-
-				Similarity: similarityMap[memory.ID],
-
-				Recency: ranking.RecencyScore(
-					memory.CreatedAt,
-				),
-
-				Importance: memory.ImportanceScore,
-
-				SessionBoost: ranking.SessionBoost(
-					currentSession,
-					memory.SessionID,
-				),
-
-				CreatedAt: memory.CreatedAt,
-			},
-		)
+	for _, m := range memories {
+		results = append(results, ranking.SearchResult{
+			MemoryID:     m.ID,
+			SessionID:    m.SessionID,
+			Text:         m.Text,
+			Similarity:   similarityMap[m.ID],
+			Recency:      ranking.RecencyScore(m.CreatedAt),
+			Importance:   m.ImportanceScore,
+			SessionBoost: ranking.SessionBoost(currentSession, m.SessionID),
+			CreatedAt:    m.CreatedAt,
+		})
 	}
+
 	ranked := ranking.Rank(results)
-	return ranked, nil
+	trace.FinalResults = len(ranked)
+	trace.TotalMs = time.Since(start).Milliseconds()
 }
 
 func (s *Service) log(t *Trace) {
