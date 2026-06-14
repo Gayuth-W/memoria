@@ -45,6 +45,16 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 
 			rec := &statusRecorder{ResponseWriter: w, status: 200}
 			next.ServeHTTP(rec, r.WithContext(ctx))
+
+			// logs structured request metadata using slog after the request completes
+			logger.Info("request",
+				slog.String("request_id", reqID),
+				slog.String("method", r.Method),
+				slog.String("path", r.URL.Path),
+				slog.Int("status", rec.status),
+				slog.Int("bytes", rec.bytes),
+				slog.Duration("latency", time.Since(start)),
+			)
 		})
 	}
 }
