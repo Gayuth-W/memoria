@@ -40,10 +40,13 @@ func RequestLogger(logger *slog.Logger) func(http.Handler) http.Handler {
 			// generates a unique request ID for traceability
 			reqID := uuid.New().String()
 
-			// stores the ID in the request context
+			// Make the request ID available to downstream handlers.
 			ctx := context.WithValue(r.Context(), RequestIDKey, reqID)
 
+			// Wrap the ResponseWriter so we can capture the final status code and response size for logging.
 			rec := &statusRecorder{ResponseWriter: w, status: 200}
+
+			// Execute the next handler with the request ID attached to the request context.
 			next.ServeHTTP(rec, r.WithContext(ctx))
 
 			// logs structured request metadata using slog after the request completes
