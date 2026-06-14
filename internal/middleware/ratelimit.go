@@ -6,6 +6,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"time"
 
 	"memoria/internal/cache"
@@ -39,6 +40,20 @@ func RateLimit(rc *cache.RedisCache, limit int, window time.Duration) func(http.
 				next.ServeHTTP(w, r)
 				return
 			}
+
+			// Start the rate limit window when the first request arrives.
+			if count == 1 {
+				rc.Client.Expire(ctx, key, window)
+			}
+
+			remaining := limit - int(count)
+			if remaining < 0 {
+				remaining = 0
+			}
+
+			// Expose rate limit information to clients.
+			w.Header().Set("X-RateLimit-Limit", strconv.Itoa(limit))
+			w.Header().Set("X-RateLimit-Remaining", strconv.Itoa(remaining))
 
 			next.ServeHTTP(w, r)
 		})
