@@ -42,6 +42,7 @@ func cacheKey(userID, session, query string) string {
 
 func (s *Service) Search(userID string, currentSession string, query string) ([]ranking.SearchResult, *Trace, error) {
 
+	//caching layer
 	start := time.Now()
 	trace := &Trace{}
 	key := cacheKey(userID, currentSession, query)
@@ -66,7 +67,11 @@ func (s *Service) Search(userID string, currentSession string, query string) ([]
 		}
 	}
 
+	// keyword
+	kwStart := time.Now()
 	keywordIDs, _ := s.Repo.KeywordSearch(userID, query)
+	trace.KeywordResults = len(keywordIDs)
+	trace.KeywordMs = time.Since(kwStart).Milliseconds()
 
 	vec, err := s.Embedder.Embed(query)
 	if err != nil {
