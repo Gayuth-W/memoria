@@ -1,6 +1,8 @@
 package search
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"log/slog"
 	"memoria/internal/cache"
 	"memoria/internal/embedding"
@@ -29,6 +31,11 @@ type Trace struct {
 	VectorMs       int64 `json:"vector_ms"`
 	KeywordMs      int64 `json:"keyword_ms"`
 	TotalMs        int64 `json:"total_ms"`
+}
+
+func cacheKey(userID, session, query string) string {
+	sum := sha256.Sum256([]byte(userID + "|" + session + "|" + query))
+	return "search:" + hex.EncodeToString(sum[:8])
 }
 
 func (s *Service) Search(userID string, currentSession string, query string) ([]ranking.SearchResult, error) {
