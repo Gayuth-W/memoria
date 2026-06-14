@@ -136,6 +136,18 @@ func (s *Service) Search(userID string, currentSession string, query string) ([]
 	ranked := ranking.Rank(results)
 	trace.FinalResults = len(ranked)
 	trace.TotalMs = time.Since(start).Milliseconds()
+
+	// cache write
+	if s.Cache != nil {
+		if b, err := json.Marshal(ranked); err == nil {
+			_ = s.Cache.Set(key, string(b))
+		}
+	}
+	if s.Metrics != nil {
+		s.Metrics.Search()
+	}
+	s.log(trace)
+	return ranked, trace, nil
 }
 
 func (s *Service) log(t *Trace) {
