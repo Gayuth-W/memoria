@@ -3,6 +3,7 @@ package search
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"log/slog"
 	"memoria/internal/cache"
 	"memoria/internal/embedding"
@@ -10,6 +11,7 @@ import (
 	vector "memoria/internal/qdrant"
 	"memoria/internal/ranking"
 	"memoria/internal/repository"
+	"time"
 )
 
 type Service struct {
@@ -38,7 +40,31 @@ func cacheKey(userID, session, query string) string {
 	return "search:" + hex.EncodeToString(sum[:8])
 }
 
-func (s *Service) Search(userID string, currentSession string, query string) ([]ranking.SearchResult, error) {
+func (s *Service) Search(userID string, currentSession string, query string) ([]ranking.SearchResult, *Trace, error) {
+
+	start := time.Now()
+	trace := &Trace{}
+	key := cacheKey(userID, currentSession, query)
+
+	if s.Cache != nil {
+		if cached, err := s.Cache.Get(key); err == nil && cached != "" {
+			var results []ranking.SearchResult
+			if json.Unmarshal([]byte(cached), &results) == nil {
+				trace.CacheHit = true
+				trace.FinalResults = len(results)
+				trace.TotalMs = time.Since(start).Milliseconds()
+				if s.Metrics != nil {
+					s.Metrics.CacheHit()
+					s.Metrics.Search()
+				}
+				s.log(trace)
+				return results, trace, nil
+			}
+		}
+		if s.Metrics != nil {
+			s.Metrics.CacheMiss()
+		}
+	}
 
 	keywordIDs, _ := s.Repo.KeywordSearch(userID, query)
 
