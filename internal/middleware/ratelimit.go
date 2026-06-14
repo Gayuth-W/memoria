@@ -55,6 +55,13 @@ func RateLimit(rc *cache.RedisCache, limit int, window time.Duration) func(http.
 			w.Header().Set("X-RateLimit-Limit", strconv.Itoa(limit))
 			w.Header().Set("X-RateLimit-Remaining", strconv.Itoa(remaining))
 
+			if count > int64(limit) {
+				ttl, _ := rc.Client.TTL(ctx, key).Result()
+				w.Header().Set("Retry-After", strconv.Itoa(int(ttl.Seconds())))
+				http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
+				return
+			}
+
 			next.ServeHTTP(w, r)
 		})
 	}
