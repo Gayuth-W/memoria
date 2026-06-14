@@ -87,24 +87,20 @@ func (s *Service) Search(userID string, currentSession string, query string) ([]
 		return nil, trace, err
 	}
 
-	vectorResults, err := s.Vector.Search(
-		vec,
-		10,
-	)
-
+	// vector search
+	vecStart := time.Now()
+	vectorResults, err := s.Vector.Search(vec, 10)
+	trace.VectorMs = time.Since(vecStart).Milliseconds()
 	if err != nil {
 		vectorResults = []vector.VectorResult{}
 	}
+	trace.VectorResults = len(vectorResults)
 
-	similarityMap := make(
-		map[string]float64,
-	)
-
+	similarityMap := make(map[string]float64)
 	var vectorIDs []string
-
-	for _, id := range vectorResults {
-		similarityMap[id.MemoryID] = id.Score
-		vectorIDs = append(vectorIDs, id.MemoryID)
+	for _, vr := range vectorResults {
+		similarityMap[vr.MemoryID] = vr.Score
+		vectorIDs = append(vectorIDs, vr.MemoryID)
 	}
 
 	seen := map[string]bool{}
