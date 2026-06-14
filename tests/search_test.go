@@ -34,7 +34,7 @@ func TestSearch(t *testing.T) {
 		Vector:   vectorStore,
 	}
 
-	results, err := searchService.Search(
+	results, _, err := searchService.Search(
 		"7a6dbabb-6560-4d0c-90b6-ae54eea5a9ac",
 		"sd3903812-bf3d-4e1b-9b8b-426e2bc23ba7",
 		"test",
