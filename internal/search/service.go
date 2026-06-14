@@ -67,15 +67,24 @@ func (s *Service) Search(userID string, currentSession string, query string) ([]
 		}
 	}
 
-	// keyword
+	// keyword search
 	kwStart := time.Now()
 	keywordIDs, _ := s.Repo.KeywordSearch(userID, query)
 	trace.KeywordResults = len(keywordIDs)
 	trace.KeywordMs = time.Since(kwStart).Milliseconds()
 
+	// embed query
+	embStart := time.Now()
 	vec, err := s.Embedder.Embed(query)
+	trace.EmbedMs = time.Since(embStart).Milliseconds()
+	if s.Metrics != nil {
+		s.Metrics.Embedding()
+	}
 	if err != nil {
-		return nil, err
+		if s.Metrics != nil {
+			s.Metrics.EmbedError()
+		}
+		return nil, trace, err
 	}
 
 	vectorResults, err := s.Vector.Search(
