@@ -1,7 +1,10 @@
 package search
 
 import (
+	"log/slog"
+	"memoria/internal/cache"
 	"memoria/internal/embedding"
+	"memoria/internal/observability"
 	vector "memoria/internal/qdrant"
 	"memoria/internal/ranking"
 	"memoria/internal/repository"
@@ -11,6 +14,21 @@ type Service struct {
 	Embedder embedding.Embedder
 	Vector   *vector.VectorStore
 	Repo     *repository.MemoryRepo
+	Cache    *cache.RedisCache
+	Metrics  *observability.Metrics
+	Logger   *slog.Logger
+}
+
+type Trace struct {
+	CacheHit       bool  `json:"cache_hit"`
+	KeywordResults int   `json:"keyword_results"`
+	VectorResults  int   `json:"vector_results"`
+	MergedResults  int   `json:"merged_results"`
+	FinalResults   int   `json:"final_results"`
+	EmbedMs        int64 `json:"embed_ms"`
+	VectorMs       int64 `json:"vector_ms"`
+	KeywordMs      int64 `json:"keyword_ms"`
+	TotalMs        int64 `json:"total_ms"`
 }
 
 func (s *Service) Search(userID string, currentSession string, query string) ([]ranking.SearchResult, error) {
