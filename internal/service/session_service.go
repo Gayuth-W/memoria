@@ -8,7 +8,8 @@ import (
 )
 
 type SessionService struct {
-	Repo *repository.SessionRepo
+	Repo       *repository.SessionRepo
+	MemoryRepo *repository.MemoryRepo
 }
 
 func (s *SessionService) Create(userID uuid.UUID, title string) error {
@@ -17,4 +18,19 @@ func (s *SessionService) Create(userID uuid.UUID, title string) error {
 		UserID: userID,
 		Title:  title,
 	})
+}
+
+func (s *SessionService) ListByUser(userID string) ([]model.Session, error) {
+	return s.Repo.ListByUser(userID)
+}
+
+func (s *SessionService) GetByID(id string) (*model.Session, error) {
+	return s.Repo.GetByID(id)
+}
+
+func (s *SessionService) GetMemories(sessionID string) ([]model.Memory, error) {
+	if s.MemoryRepo != nil {
+		return s.MemoryRepo.ListBySession(sessionID)
+	}
+	return nil, nil
 }

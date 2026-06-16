@@ -125,3 +125,29 @@ func (r *MemoryRepo) GetByIDs(
 
 	return memories, nil
 }
+
+func (r *MemoryRepo) Delete(id string) error {
+	_, err := r.DB.Exec(`DELETE FROM memories WHERE id = $1`, id)
+	return err
+}
+
+func (r *MemoryRepo) ListBySession(sessionID string) ([]model.Memory, error) {
+	rows, err := r.DB.Query(`
+		SELECT id, user_id, session_id, text, created_at, embedding_hash
+		FROM memories
+		WHERE session_id = $1
+	`, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var res []model.Memory
+	for rows.Next() {
+		var m model.Memory
+		rows.Scan(&m.ID, &m.UserID, &m.SessionID, &m.Text, &m.CreatedAt, &m.EmbeddingHash)
+		res = append(res, m)
+	}
+
+	return res, nil
+}
