@@ -39,3 +39,21 @@ func (r *SessionRepo) ListByUser(userID string) ([]model.Session, error) {
 
 	return sessions, nil
 }
+
+func (r *SessionRepo) GetByID(id string) (*model.Session, error) {
+	var s model.Session
+	err := r.DB.QueryRow(`
+		SELECT id, user_id, title, created_at
+		FROM sessions
+		WHERE id = $1
+	`, id).Scan(&s.ID, &s.UserID, &s.Title, &s.CreatedAt)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return &s, nil
+}
