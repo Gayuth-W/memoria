@@ -57,3 +57,7 @@ func (s *MemoryService) Create(userID, sessionID, text string) error {
 	}
 	return nil
 }
+
+func (s *MemoryService) ListByUser(userID string) ([]model.Memory, error) {
+	return s.Repo.ListByUser(userID)
+}
