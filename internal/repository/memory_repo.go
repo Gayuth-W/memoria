@@ -125,3 +125,8 @@ func (r *MemoryRepo) GetByIDs(
 
 	return memories, nil
 }
+
+func (r *MemoryRepo) Delete(id string) error {
+	_, err := r.DB.Exec(`DELETE FROM memories WHERE id = $1`, id)
+	return err
+}
