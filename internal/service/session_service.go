@@ -18,3 +18,7 @@ func (s *SessionService) Create(userID uuid.UUID, title string) error {
 		Title:  title,
 	})
 }
+
+func (s *SessionService) ListByUser(userID string) ([]model.Session, error) {
+	return s.Repo.ListByUser(userID)
+}
