@@ -7,6 +7,7 @@ import (
 	"memoria/internal/middleware"
 	"memoria/internal/service"
 
+	"github.com/go-chi/chi"
 	"github.com/google/uuid"
 )
 
@@ -43,4 +44,25 @@ func (h *SessionHandler) ListByUser(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(sessions)
+}
+
+func (h *SessionHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "id is required", http.StatusBadRequest)
+		return
+	}
+
+	session, err := h.Service.GetByID(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if session == nil {
+		http.Error(w, "session not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(session)
 }
