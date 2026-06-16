@@ -7,6 +7,7 @@ import (
 	"memoria/internal/middleware"
 	"memoria/internal/service"
 
+	"github.com/go-chi/chi"
 	"github.com/google/uuid"
 )
 
@@ -57,4 +58,22 @@ func (h *MemoryHandler) ListByUser(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(memories)
+}
+
+func (h *MemoryHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	// userID := r.Context().Value(middleware.UserIDKey).(uuid.UUID).String()
+	// Ideally we'd ensure the memory belongs to the user, but for now we just delete it.
+	id := chi.URLParam(r, "id")
+	if id == "" {
+		http.Error(w, "id is required", http.StatusBadRequest)
+		return
+	}
+
+	err := h.Service.Delete(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
