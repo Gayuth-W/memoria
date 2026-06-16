@@ -61,3 +61,7 @@ func (s *MemoryService) Create(userID, sessionID, text string) error {
 func (s *MemoryService) ListByUser(userID string) ([]model.Memory, error) {
 	return s.Repo.ListByUser(userID)
 }
+
+func (s *MemoryService) Delete(id string) error {
+	return s.Repo.Delete(id)
+}
