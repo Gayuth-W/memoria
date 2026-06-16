@@ -1,6 +1,9 @@
 package service
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"memoria/internal/cache"
 	"memoria/internal/model"
 	"memoria/internal/repository"
 	"memoria/internal/worker"
@@ -11,9 +14,13 @@ import (
 type MemoryService struct {
 	Repo   *repository.MemoryRepo
 	Worker *worker.Worker
+	Cache  *cache.RedisCache
 }
 
-func (s *MemoryService) Create(userID, sessionID, text, embeddingHash string) error {
+func (s *MemoryService) Create(userID, sessionID, text string) error {
+
+	hash := sha256.Sum256([]byte(text))
+	embeddingHash := hex.EncodeToString(hash[:])
 
 	m := model.Memory{
 		ID:            uuid.New().String(),
