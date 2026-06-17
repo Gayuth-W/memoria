@@ -108,3 +108,13 @@ func toQdrantPayload(m map[string]any) map[string]*qdrant.Value {
 
 	return out
 }
+
+func (v *VectorStore) Delete(id string) error {
+	_, err := v.client.Delete(context.Background(), &qdrant.DeletePoints{
+		CollectionName: "memories",
+		Points: qdrant.NewPointsSelector(&qdrant.PointId{
+			PointIdOptions: &qdrant.PointId_Uuid{Uuid: id},
+		}),
+	})
+	return err
+}

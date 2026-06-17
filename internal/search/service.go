@@ -75,10 +75,30 @@ func (s *Service) Search(userID string, currentSession string, query string) ([]
 
 	// embed query
 	embStart := time.Now()
-	vec, err := s.Embedder.Embed(query)
+	var vec []float32
+	var err error
+
+	// Try to get cached embedding
+	embKey := "emb:" + hex.EncodeToString([]byte(query))
+	if s.Cache != nil {
+		if cachedEmb, err := s.Cache.Get(embKey); err == nil && cachedEmb != "" {
+			_ = json.Unmarshal([]byte(cachedEmb), &vec)
+		}
+	}
+
+	if len(vec) == 0 {
+		vec, err = s.Embedder.Embed(query)
+		if err == nil && s.Cache != nil {
+			if b, e := json.Marshal(vec); e == nil {
+				_ = s.Cache.Set(embKey, string(b))
+			}
+		}
+	}
+
 	trace.EmbedMs = time.Since(embStart).Milliseconds()
 	if s.Metrics != nil {
 		s.Metrics.Embedding()
+		s.Metrics.RecordEmbedMs(trace.EmbedMs)
 	}
 	if err != nil {
 		if s.Metrics != nil {

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"memoria/internal/middleware"
+	"memoria/internal/repository"
 	"memoria/internal/service"
 
 	"github.com/go-chi/chi"
@@ -47,13 +48,14 @@ func (h *SessionHandler) ListByUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *SessionHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(middleware.UserIDKey).(uuid.UUID).String()
 	id := chi.URLParam(r, "id")
 	if id == "" {
 		http.Error(w, "id is required", http.StatusBadRequest)
 		return
 	}
 
-	session, err := h.Service.GetByID(id)
+	session, err := h.Service.GetByID(id, userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -64,17 +66,22 @@ func (h *SessionHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(session)
+
 }
 
 func (h *SessionHandler) GetMemories(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(middleware.UserIDKey).(uuid.UUID).String()
 	id := chi.URLParam(r, "id")
 	if id == "" {
 		http.Error(w, "id is required", http.StatusBadRequest)
 		return
 	}
 
-	memories, err := h.Service.GetMemories(id)
+	memories, err := h.Service.GetMemories(id, userID)
+	if err == repository.ErrNotFound {
+		http.Error(w, "session not found", http.StatusNotFound)
+		return
+	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

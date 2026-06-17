@@ -7,7 +7,7 @@ func Normalize(
 ) float64 {
 
 	if max == min {
-		return 0
+		return 1.0
 	}
 
 	return (value - min) / (max - min)
