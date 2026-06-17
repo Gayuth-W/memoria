@@ -24,13 +24,22 @@ func (s *SessionService) ListByUser(userID string) ([]model.Session, error) {
 	return s.Repo.ListByUser(userID)
 }
 
-func (s *SessionService) GetByID(id string) (*model.Session, error) {
-	return s.Repo.GetByID(id)
+func (s *SessionService) GetByID(id, userID string) (*model.Session, error) {
+	return s.Repo.GetByID(id, userID)
 }
 
-func (s *SessionService) GetMemories(sessionID string) ([]model.Memory, error) {
+func (s *SessionService) GetMemories(sessionID, userID string) ([]model.Memory, error) {
+	// First check if the session belongs to the user
+	session, err := s.Repo.GetByID(sessionID, userID)
+	if err != nil {
+		return nil, err
+	}
+	if session == nil {
+		return nil, repository.ErrNotFound
+	}
+
 	if s.MemoryRepo != nil {
-		return s.MemoryRepo.ListBySession(sessionID)
+		return s.MemoryRepo.ListBySession(sessionID, userID)
 	}
 	return nil, nil
 }

@@ -126,17 +126,20 @@ func (r *MemoryRepo) GetByIDs(
 	return memories, nil
 }
 
-func (r *MemoryRepo) Delete(id string) error {
-	_, err := r.DB.Exec(`DELETE FROM memories WHERE id = $1`, id)
-	return err
+func (r *MemoryRepo) Delete(id, userID string) (int64, error) {
+	res, err := r.DB.Exec(`DELETE FROM memories WHERE id = $1 AND user_id = $2`, id, userID)
+	if err != nil {
+		return 0, err
+	}
+	return res.RowsAffected()
 }
 
-func (r *MemoryRepo) ListBySession(sessionID string) ([]model.Memory, error) {
+func (r *MemoryRepo) ListBySession(sessionID, userID string) ([]model.Memory, error) {
 	rows, err := r.DB.Query(`
 		SELECT id, user_id, session_id, text, created_at, embedding_hash
 		FROM memories
-		WHERE session_id = $1
-	`, sessionID)
+		WHERE session_id = $1 AND user_id = $2
+	`, sessionID, userID)
 	if err != nil {
 		return nil, err
 	}

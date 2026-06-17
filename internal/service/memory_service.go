@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"memoria/internal/cache"
 	"memoria/internal/model"
+	vector "memoria/internal/qdrant"
 	"memoria/internal/repository"
 	"memoria/internal/worker"
 
@@ -16,6 +17,7 @@ type MemoryService struct {
 	Repo   *repository.MemoryRepo
 	Worker *worker.Worker
 	Cache  *cache.RedisCache
+	Vector *vector.VectorStore
 }
 
 func (s *MemoryService) Create(userID, sessionID, text string) error {
@@ -62,8 +64,28 @@ func (s *MemoryService) ListByUser(userID string) ([]model.Memory, error) {
 	return s.Repo.ListByUser(userID)
 }
 
-func (s *MemoryService) Delete(id string) error {
-	return s.Repo.Delete(id)
+func (s *MemoryService) Delete(id, userID string) error {
+	rows, err := s.Repo.Delete(id, userID)
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return repository.ErrNotFound
+	}
+
+	if s.Cache != nil {
+		ctx := context.Background()
+		keys, err := s.Cache.Client.Keys(ctx, "search:*").Result()
+		if err == nil && len(keys) > 0 {
+			s.Cache.Client.Del(ctx, keys...)
+		}
+	}
+
+	if s.Vector != nil {
+		_ = s.Vector.Delete(id)
+	}
+
+	return nil
 }
 
 func (s *MemoryService) GetByID(id, userID string) (*model.Memory, error) {
