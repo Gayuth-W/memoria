@@ -151,3 +151,20 @@ func (r *MemoryRepo) ListBySession(sessionID string) ([]model.Memory, error) {
 
 	return res, nil
 }
+
+func (r *MemoryRepo) GetByID(id, userID string) (*model.Memory, error) {
+	var m model.Memory
+	err := r.DB.QueryRow(`
+		SELECT id, user_id, session_id, text, created_at, embedding_hash
+		FROM memories
+		WHERE id = $1 AND user_id = $2
+	`, id, userID).Scan(&m.ID, &m.UserID, &m.SessionID, &m.Text, &m.CreatedAt, &m.EmbeddingHash)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &m, nil
+}

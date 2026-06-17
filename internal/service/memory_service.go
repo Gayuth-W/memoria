@@ -65,3 +65,7 @@ func (s *MemoryService) ListByUser(userID string) ([]model.Memory, error) {
 func (s *MemoryService) Delete(id string) error {
 	return s.Repo.Delete(id)
 }
+
+func (s *MemoryService) GetByID(id, userID string) (*model.Memory, error) {
+	return s.Repo.GetByID(id, userID)
+}
