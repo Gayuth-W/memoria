@@ -73,7 +73,7 @@ func main() {
 
 	// services
 	sessionService := &service.SessionService{Repo: sessionRepo, MemoryRepo: memoryRepo}
-	memoryService := &service.MemoryService{Repo: memoryRepo, Worker: backgroundWorker, Cache: redisCache}
+	memoryService := &service.MemoryService{Repo: memoryRepo, Worker: backgroundWorker, Cache: redisCache, Vector: vectorStore}
 	userService := &service.UserService{Repo: userRepo}
 	searchService := &search.Service{
 		Embedder: embedder, Vector: vectorStore, Repo: memoryRepo,
@@ -88,9 +88,8 @@ func main() {
 
 	r := chi.NewRouter()
 
-	// Add Request Logger middleware
+	// Middleware MUST be registered before any routes (chi panics otherwise).
 	r.Use(middleware.RequestLogger(logger))
-
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -121,6 +120,7 @@ func main() {
 		r.Get("/sessions/{id}/memories", sessionHandler.GetMemories)
 
 		r.Get("/memories", memoryHandler.ListByUser)
+		r.Get("/memories/{id}", memoryHandler.GetByID)
 		r.Post("/memories", memoryHandler.Create)
 		r.Delete("/memories/{id}", memoryHandler.Delete)
 

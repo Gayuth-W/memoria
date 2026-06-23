@@ -57,6 +57,7 @@ func (s *Service) Search(userID string, currentSession string, query string) ([]
 				if s.Metrics != nil {
 					s.Metrics.CacheHit()
 					s.Metrics.Search()
+					s.Metrics.RecordSearchMs(trace.TotalMs)
 				}
 				s.log(trace)
 				return results, trace, nil
@@ -165,6 +166,7 @@ func (s *Service) Search(userID string, currentSession string, query string) ([]
 	}
 	if s.Metrics != nil {
 		s.Metrics.Search()
+		s.Metrics.RecordSearchMs(trace.TotalMs)
 	}
 	s.log(trace)
 	return ranked, trace, nil
