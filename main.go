@@ -51,6 +51,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	r := chi.NewRouter()
 	// worker
 	workerHandler := &worker.Handler{
 		Embedder: embedder,
@@ -73,20 +74,22 @@ func main() {
 
 	// services
 	sessionService := &service.SessionService{Repo: sessionRepo, MemoryRepo: memoryRepo}
-	memoryService := &service.MemoryService{Repo: memoryRepo, Worker: backgroundWorker, Cache: redisCache}
-	userService := &service.UserService{Repo: userRepo}
+	memoryService := &service.MemoryService{Repo: memoryRepo, Worker: backgroundWorker, Cache: redisCache, Vector: vectorStore}
 	searchService := &search.Service{
 		Embedder: embedder, Vector: vectorStore, Repo: memoryRepo,
 		Cache: redisCache, Metrics: metrics, Logger: logger,
 	}
-
+	userService := &service.UserService{Repo: userRepo}
 	// handlers
 	sessionHandler := &handler.SessionHandler{Service: sessionService}
 	memoryHandler := &handler.MemoryHandler{Service: memoryService}
 	userHandler := &handler.UserHandler{Service: userService}
 	searchHandler := &handler.SearchHandler{Service: searchService}
 
-	r := chi.NewRouter()
+	r.Get("/memories", memoryHandler.ListByUser)
+	r.Get("/memories/{id}", memoryHandler.GetByID)
+	r.Post("/memories", memoryHandler.Create)
+	r.Delete("/memories/{id}", memoryHandler.Delete)
 
 	// Add Request Logger middleware
 	r.Use(middleware.RequestLogger(logger))
