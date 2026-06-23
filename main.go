@@ -51,7 +51,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	r := chi.NewRouter()
 	// worker
 	workerHandler := &worker.Handler{
 		Embedder: embedder,
@@ -75,25 +74,22 @@ func main() {
 	// services
 	sessionService := &service.SessionService{Repo: sessionRepo, MemoryRepo: memoryRepo}
 	memoryService := &service.MemoryService{Repo: memoryRepo, Worker: backgroundWorker, Cache: redisCache, Vector: vectorStore}
+	userService := &service.UserService{Repo: userRepo}
 	searchService := &search.Service{
 		Embedder: embedder, Vector: vectorStore, Repo: memoryRepo,
 		Cache: redisCache, Metrics: metrics, Logger: logger,
 	}
-	userService := &service.UserService{Repo: userRepo}
+
 	// handlers
 	sessionHandler := &handler.SessionHandler{Service: sessionService}
 	memoryHandler := &handler.MemoryHandler{Service: memoryService}
 	userHandler := &handler.UserHandler{Service: userService}
 	searchHandler := &handler.SearchHandler{Service: searchService}
 
-	r.Get("/memories", memoryHandler.ListByUser)
-	r.Get("/memories/{id}", memoryHandler.GetByID)
-	r.Post("/memories", memoryHandler.Create)
-	r.Delete("/memories/{id}", memoryHandler.Delete)
+	r := chi.NewRouter()
 
-	// Add Request Logger middleware
+	// Middleware MUST be registered before any routes (chi panics otherwise).
 	r.Use(middleware.RequestLogger(logger))
-
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -124,6 +120,7 @@ func main() {
 		r.Get("/sessions/{id}/memories", sessionHandler.GetMemories)
 
 		r.Get("/memories", memoryHandler.ListByUser)
+		r.Get("/memories/{id}", memoryHandler.GetByID)
 		r.Post("/memories", memoryHandler.Create)
 		r.Delete("/memories/{id}", memoryHandler.Delete)
 

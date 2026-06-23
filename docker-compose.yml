@@ -11,12 +11,16 @@ services:
       - REDIS_ADDR=redis:6379
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6334
+      - OLLAMA_URL=http://ollama:11434
+      - OLLAMA_MODEL=nomic-embed-text-v2-moe:latest
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
       qdrant:
+        condition: service_started
+      ollama:
         condition: service_started
 
   db:
@@ -43,3 +47,12 @@ services:
     ports:
       - "6333:6333"
       - "6334:6334"
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+ 
+  volumes:
+    ollama_data:
