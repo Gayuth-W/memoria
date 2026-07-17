@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -31,4 +32,14 @@ func (r *ProfileRepo) GetByUser(userID uuid.UUID) ([]string, error) {
 	}
 
 	return facts, nil
+}
+
+func (r *ProfileRepo) Add(userID uuid.UUID, fact string) error {
+	id := uuid.New()
+	_, err := r.DB.Exec(`
+		INSERT INTO pinned_facts(id, user_id, fact, created_at)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (user_id, fact) DO NOTHING
+	`, id, userID, fact, time.Now())
+	return err
 }
