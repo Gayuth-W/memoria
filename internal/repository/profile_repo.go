@@ -43,3 +43,11 @@ func (r *ProfileRepo) Add(userID uuid.UUID, fact string) error {
 	`, id, userID, fact, time.Now())
 	return err
 }
+
+func (r *ProfileRepo) Remove(userID uuid.UUID, fact string) error {
+	_, err := r.DB.Exec(`
+		DELETE FROM pinned_facts
+		WHERE user_id = $1 AND fact = $2
+	`, userID, fact)
+	return err
+}
