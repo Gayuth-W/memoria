@@ -69,12 +69,14 @@ func main() {
 	userRepo := &repository.UserRepo{DB: database}
 	sessionRepo := &repository.SessionRepo{DB: database}
 	memoryRepo := &repository.MemoryRepo{DB: database}
+	profileRepo := &repository.ProfileRepo{DB: database}
 	redisCache := cache.NewRedisCache()
 
 	// services
 	sessionService := &service.SessionService{Repo: sessionRepo, MemoryRepo: memoryRepo}
 	memoryService := &service.MemoryService{Repo: memoryRepo, Worker: backgroundWorker, Cache: redisCache, Vector: vectorStore}
 	userService := &service.UserService{Repo: userRepo}
+	profileService := &service.ProfileService{Repo: profileRepo}
 	searchService := &search.Service{
 		Embedder: embedder, Vector: vectorStore, Repo: memoryRepo,
 		Cache: redisCache, Metrics: metrics, Logger: logger,
@@ -84,6 +86,7 @@ func main() {
 	sessionHandler := &handler.SessionHandler{Service: sessionService}
 	memoryHandler := &handler.MemoryHandler{Service: memoryService}
 	userHandler := &handler.UserHandler{Service: userService}
+	profileHandler := &handler.ProfileHandler{Service: profileService}
 	searchHandler := &handler.SearchHandler{Service: searchService}
 
 	r := chi.NewRouter()
@@ -123,6 +126,10 @@ func main() {
 		r.Get("/memories/{id}", memoryHandler.GetByID)
 		r.Post("/memories", memoryHandler.Create)
 		r.Delete("/memories/{id}", memoryHandler.Delete)
+
+		r.Get("/profile", profileHandler.Get)
+		r.Post("/profile", profileHandler.Add)
+		r.Delete("/profile", profileHandler.Remove)
 
 		r.Post("/search", searchHandler.Search)
 	})

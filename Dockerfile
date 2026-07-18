@@ -1,59 +1,15 @@
-version: '3.8'
+FROM golang:alpine AS builder
 
-services:
-  api:
-    build: .
-    ports:
-      - "8080:8080"
-    environment:
-      - PORT=8080
-      - DATABASE_URL=postgres://postgres:postgres@db:5432/memoria?sslmode=disable
-      - REDIS_ADDR=redis:6379
-      - QDRANT_HOST=qdrant
-      - QDRANT_PORT=6334
-      - OLLAMA_URL=http://ollama:11434
-      - OLLAMA_MODEL=nomic-embed-text-v2-moe:latest
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      qdrant:
-        condition: service_started
-      ollama:
-        condition: service_started
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
 
-  db:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=memoria
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o api ./main.go
 
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-
-  qdrant:
-    image: qdrant/qdrant:latest
-    ports:
-      - "6333:6333"
-      - "6334:6334"
-
-  ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-
-volumes:
-  ollama_data:
+FROM alpine:latest
+WORKDIR /app
+COPY --from=builder /app/api .
+COPY .env* ./
+EXPOSE 8080
+CMD ["./api"]

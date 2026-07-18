@@ -28,18 +28,4 @@ UPDATE memories
 SET tsv = to_tsvector('english', coalesce(text, ''))
 WHERE tsv IS NULL;
 
-
--- +goose Down
--- Remove Full-Text Search support only (not the tables!)
-
--- Step 1: Remove trigger
-DROP TRIGGER IF EXISTS tsv_update ON memories;
-
--- Step 2: Remove trigger function
-DROP FUNCTION IF EXISTS memories_tsv_trigger();
-
--- Step 3: Remove index
-DROP INDEX IF EXISTS idx_memories_fts;
-
--- Step 4: Remove column
-ALTER TABLE memories DROP COLUMN IF EXISTS tsv;
+
